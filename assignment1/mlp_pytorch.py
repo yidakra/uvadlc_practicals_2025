@@ -52,14 +52,44 @@ class MLP(nn.Module):
         Implement module setup of the network.
         The linear layer have to initialized according to the Kaiming initialization.
         Add the Batch-Normalization _only_ is use_batch_norm is True.
-        
+
         Hint: No softmax layer is needed here. Look at the CrossEntropyLoss module for loss calculation.
         """
 
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        super(MLP, self).__init__()
+
+        # Build network architecture
+        # Input -> [Linear -> (BatchNorm) -> ELU] * len(n_hidden) -> Linear
+        layers = []
+        current_dim = n_inputs
+
+        # Add hidden layers with ELU activation
+        for hidden_dim in n_hidden:
+            # Linear layer
+            linear = nn.Linear(current_dim, hidden_dim)
+            # Kaiming initialization
+            nn.init.kaiming_normal_(linear.weight, nonlinearity='relu')
+            layers.append(('linear_{}'.format(len(layers)), linear))
+
+            # Batch normalization (if enabled)
+            if use_batch_norm:
+                layers.append(('batchnorm_{}'.format(len(layers)), nn.BatchNorm1d(hidden_dim)))
+
+            # ELU activation
+            layers.append(('elu_{}'.format(len(layers)), nn.ELU()))
+
+            current_dim = hidden_dim
+
+        # Add output layer (no activation, no batch norm)
+        output_linear = nn.Linear(current_dim, n_classes)
+        nn.init.kaiming_normal_(output_linear.weight, nonlinearity='relu')
+        layers.append(('output', output_linear))
+
+        # Create sequential model
+        self.layers = nn.Sequential(OrderedDict(layers))
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -81,7 +111,12 @@ class MLP(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+        # Flatten input if needed: (batch_size, C, H, W) -> (batch_size, C*H*W)
+        if x.dim() > 2:
+            x = x.view(x.size(0), -1)
 
+        # Pass through all layers
+        out = self.layers(x)
         #######################
         # END OF YOUR CODE    #
         #######################

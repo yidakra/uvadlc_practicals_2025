@@ -38,7 +38,7 @@ def accuracy(predictions, targets):
     """
     Computes the prediction accuracy, i.e. the average of correct predictions
     of the network.
-    
+
     Args:
       predictions: 2D float array of size [batch_size, n_classes], predictions of the model (logits)
       llabels: 1D int array of size [batch_size]. Ground truth labels for
@@ -46,7 +46,7 @@ def accuracy(predictions, targets):
     Returns:
       accuracy: scalar float, the accuracy of predictions,
                 i.e. the average correct predictions over the whole batch
-    
+
     TODO:
     Implement accuracy computation.
     """
@@ -54,11 +54,22 @@ def accuracy(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    # Get predicted class (argmax over class dimension)
+    predicted_classes = torch.argmax(predictions, dim=1)
 
+    # Handle both 1D class indices and 2D one-hot encoded targets
+    if targets.dim() == 2:
+        # One-hot encoded, convert to class indices
+        target_classes = torch.argmax(targets, dim=1)
+    else:
+        target_classes = targets
+
+    # Compute accuracy
+    accuracy = torch.mean((predicted_classes == target_classes).float()).item()
     #######################
     # END OF YOUR CODE    #
     #######################
-    
+
     return accuracy
 
 
@@ -75,18 +86,41 @@ def evaluate_model(model, data_loader):
     TODO:
     Implement evaluation of the MLP model on a given dataset.
 
-    Hint: make sure to return the average accuracy of the whole dataset, 
+    Hint: make sure to return the average accuracy of the whole dataset,
           independent of batch sizes (not all batches might be the same size).
     """
 
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    model.eval()  # Set model to evaluation mode
+    total_correct = 0
+    total_samples = 0
 
+    with torch.no_grad():  # Disable gradient computation
+        for data, targets in data_loader:
+            # Move data to device
+            data = data.to(model.device)
+            targets = targets.to(model.device)
+
+            # Forward pass
+            predictions = model(data)
+
+            # Compute accuracy for this batch
+            predicted_classes = torch.argmax(predictions, dim=1)
+            if targets.dim() == 2:
+                target_classes = torch.argmax(targets, dim=1)
+            else:
+                target_classes = targets
+
+            total_correct += torch.sum(predicted_classes == target_classes).item()
+            total_samples += data.size(0)
+
+    avg_accuracy = total_correct / total_samples
     #######################
     # END OF YOUR CODE    #
     #######################
-    
+
     return avg_accuracy
 
 
@@ -145,20 +179,79 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     #######################
 
     # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
+    # CIFAR-10 images are 3x32x32 = 3072 pixels, 10 classes
+    n_inputs = 3 * 32 * 32
+    n_classes = 10
+    model = MLP(n_inputs, hidden_dims, n_classes, use_batch_norm=use_batch_norm)
+    model = model.to(device)
+
+    # CrossEntropyLoss combines LogSoftmax and NLLLoss
+    loss_module = nn.CrossEntropyLoss()
+
     # TODO: Training loop including validation
     # TODO: Do optimization with the simple SGD optimizer
-    val_accuracies = ...
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+
+    val_accuracies = []
+    train_losses = []
+    best_val_accuracy = 0
+    best_model = None
+
+    for epoch in range(epochs):
+        # Training phase
+        model.train()  # Set model to training mode
+        epoch_losses = []
+
+        for data, targets in tqdm(cifar10_loader['train'], desc=f'Epoch {epoch+1}/{epochs}', leave=False):
+            # Move data to device
+            data = data.to(device)
+            targets = targets.to(device)
+
+            # Zero gradients
+            optimizer.zero_grad()
+
+            # Forward pass
+            predictions = model(data)
+
+            # Compute loss
+            loss = loss_module(predictions, targets)
+            epoch_losses.append(loss.item())
+
+            # Backward pass
+            loss.backward()
+
+            # Update parameters
+            optimizer.step()
+
+        # Validation phase
+        val_accuracy = evaluate_model(model, cifar10_loader['validation'])
+        val_accuracies.append(val_accuracy)
+
+        avg_train_loss = np.mean(epoch_losses)
+        train_losses.append(avg_train_loss)
+
+        print(f'Epoch {epoch+1}/{epochs}: Train Loss = {avg_train_loss:.4f}, Val Accuracy = {val_accuracy:.4f}')
+
+        # Save best model
+        if val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            best_model = deepcopy(model)
+
     # TODO: Test best model
-    test_accuracy = ...
+    test_accuracy = evaluate_model(best_model, cifar10_loader['test'])
+    print(f'Test Accuracy: {test_accuracy:.4f}')
+
     # TODO: Add any information you might want to save for plotting
-    logging_dict = ...
+    logging_dict = {
+        'train_losses': train_losses,
+        'val_accuracies': val_accuracies,
+        'test_accuracy': test_accuracy
+    }
     #######################
     # END OF YOUR CODE    #
     #######################
 
-    return model, val_accuracies, test_accuracy, logging_dict
+    return best_model, val_accuracies, test_accuracy, logging_dict
 
 
 if __name__ == '__main__':

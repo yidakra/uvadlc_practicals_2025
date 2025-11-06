@@ -53,7 +53,18 @@ def accuracy(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    # Get predicted class (argmax over class dimension)
+    predicted_classes = np.argmax(predictions, axis=1)
 
+    # Handle both 1D class indices and 2D one-hot encoded targets
+    if targets.ndim == 2:
+        # One-hot encoded, convert to class indices
+        target_classes = np.argmax(targets, axis=1)
+    else:
+        target_classes = targets
+
+    # Compute accuracy
+    accuracy = np.mean(predicted_classes == target_classes)
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -74,14 +85,35 @@ def evaluate_model(model, data_loader):
     TODO:
     Implement evaluation of the MLP model on a given dataset.
 
-    Hint: make sure to return the average accuracy of the whole dataset, 
+    Hint: make sure to return the average accuracy of the whole dataset,
           independent of batch sizes (not all batches might be the same size).
     """
 
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    total_correct = 0
+    total_samples = 0
 
+    for data, targets in data_loader:
+        # Flatten images: (batch_size, C, H, W) -> (batch_size, C*H*W)
+        batch_size = data.shape[0]
+        data = data.reshape(batch_size, -1)
+
+        # Forward pass
+        predictions = model.forward(data)
+
+        # Compute accuracy for this batch
+        predicted_classes = np.argmax(predictions, axis=1)
+        if targets.ndim == 2:
+            target_classes = np.argmax(targets, axis=1)
+        else:
+            target_classes = targets
+
+        total_correct += np.sum(predicted_classes == target_classes)
+        total_samples += batch_size
+
+    avg_accuracy = total_correct / total_samples
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -135,19 +167,73 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     #######################
 
     # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
+    # CIFAR-10 images are 3x32x32 = 3072 pixels, 10 classes
+    n_inputs = 3 * 32 * 32
+    n_classes = 10
+    model = MLP(n_inputs, hidden_dims, n_classes)
+    loss_module = CrossEntropyModule()
+
     # TODO: Training loop including validation
-    val_accuracies = ...
+    val_accuracies = []
+    train_losses = []
+    best_val_accuracy = 0
+    best_model = None
+
+    for epoch in range(epochs):
+        # Training phase
+        epoch_losses = []
+
+        for data, targets in tqdm(cifar10_loader['train'], desc=f'Epoch {epoch+1}/{epochs}', leave=False):
+            # Flatten images: (batch_size, C, H, W) -> (batch_size, C*H*W)
+            batch_size_curr = data.shape[0]
+            data = data.reshape(batch_size_curr, -1)
+
+            # Forward pass
+            predictions = model.forward(data)
+
+            # Compute loss
+            loss = loss_module.forward(predictions, targets)
+            epoch_losses.append(loss)
+
+            # Backward pass
+            dout = loss_module.backward(predictions, targets)
+            model.backward(dout)
+
+            # Update parameters using SGD
+            for module in model.modules:
+                if hasattr(module, 'params'):
+                    for param_name in module.params:
+                        module.params[param_name] -= lr * module.grads[param_name]
+
+        # Validation phase
+        val_accuracy = evaluate_model(model, cifar10_loader['validation'])
+        val_accuracies.append(val_accuracy)
+
+        avg_train_loss = np.mean(epoch_losses)
+        train_losses.append(avg_train_loss)
+
+        print(f'Epoch {epoch+1}/{epochs}: Train Loss = {avg_train_loss:.4f}, Val Accuracy = {val_accuracy:.4f}')
+
+        # Save best model
+        if val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            best_model = deepcopy(model)
+
     # TODO: Test best model
-    test_accuracy = ...
+    test_accuracy = evaluate_model(best_model, cifar10_loader['test'])
+    print(f'Test Accuracy: {test_accuracy:.4f}')
+
     # TODO: Add any information you might want to save for plotting
-    logging_dict = ...
+    logging_dict = {
+        'train_losses': train_losses,
+        'val_accuracies': val_accuracies,
+        'test_accuracy': test_accuracy
+    }
     #######################
     # END OF YOUR CODE    #
     #######################
 
-    return model, val_accuracies, test_accuracy, logging_dict
+    return best_model, val_accuracies, test_accuracy, logging_dict
 
 
 if __name__ == '__main__':
