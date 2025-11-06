@@ -163,7 +163,7 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     if torch.cuda.is_available():  # GPU operation have separate seed
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.determinstic = True
+        torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
     # Set default device
