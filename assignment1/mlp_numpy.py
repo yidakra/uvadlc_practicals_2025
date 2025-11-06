@@ -52,7 +52,23 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        self.modules = []
+
+        # Build the network architecture
+        # Input -> [Linear -> ELU] * len(n_hidden) -> Linear -> Softmax
+        current_dim = n_inputs
+
+        # Add hidden layers with ELU activation
+        for i, hidden_dim in enumerate(n_hidden):
+            # Linear layer (first layer is input layer)
+            self.modules.append(LinearModule(current_dim, hidden_dim, input_layer=(i == 0)))
+            # ELU activation (alpha = 1.0 is standard)
+            self.modules.append(ELUModule(alpha=1.0))
+            current_dim = hidden_dim
+
+        # Add output layer (Linear + Softmax)
+        self.modules.append(LinearModule(current_dim, n_classes, input_layer=(len(n_hidden) == 0)))
+        self.modules.append(SoftMaxModule())
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -74,7 +90,10 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-
+        # Pass input through all modules sequentially
+        out = x
+        for module in self.modules:
+            out = module.forward(out)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -95,7 +114,10 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        # Backpropagate gradients through all modules in reverse order
+        grad = dout
+        for module in reversed(self.modules):
+            grad = module.backward(grad)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -108,11 +130,12 @@ class MLP(object):
         TODO:
         Iterate over modules and call the 'clear_cache' function.
         """
-        
+
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        for module in self.modules:
+            module.clear_cache()
         #######################
         # END OF YOUR CODE    #
         #######################
