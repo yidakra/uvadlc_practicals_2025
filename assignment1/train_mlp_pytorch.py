@@ -54,17 +54,16 @@ def accuracy(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    # Get predicted class (argmax over class dimension)
+    # pick the highest scoring class
     predicted_classes = torch.argmax(predictions, dim=1)
 
-    # Handle both 1D class indices and 2D one-hot encoded targets
+    # handle one-hot labels by converting to indices
     if targets.dim() == 2:
-        # One-hot encoded, convert to class indices
         target_classes = torch.argmax(targets, dim=1)
     else:
         target_classes = targets
 
-    # Compute accuracy
+    # compute mean accuracy
     accuracy = torch.mean((predicted_classes == target_classes).float()).item()
     #######################
     # END OF YOUR CODE    #
@@ -93,20 +92,22 @@ def evaluate_model(model, data_loader):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    model.eval()  # Set model to evaluation mode
+    # switch to eval mode
+    model.eval()
     total_correct = 0
     total_samples = 0
 
-    with torch.no_grad():  # Disable gradient computation
+    # disable autograd while evaluating
+    with torch.no_grad():
         for data, targets in data_loader:
-            # Move data to device
+            # move tensors onto the right device
             data = data.to(model.device)
             targets = targets.to(model.device)
 
-            # Forward pass
+            # forward pass
             predictions = model(data)
 
-            # Compute accuracy for this batch
+            # track accuracy for this batch
             predicted_classes = torch.argmax(predictions, dim=1)
             if targets.dim() == 2:
                 target_classes = torch.argmax(targets, dim=1)
@@ -178,18 +179,15 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     # PUT YOUR CODE HERE  #
     #######################
 
-    # TODO: Initialize model and loss module
-    # CIFAR-10 images are 3x32x32 = 3072 pixels, 10 classes
+    # cifar10 inputs flatten to 3072 features
     n_inputs = 3 * 32 * 32
     n_classes = 10
     model = MLP(n_inputs, hidden_dims, n_classes, use_batch_norm=use_batch_norm)
     model = model.to(device)
 
-    # CrossEntropyLoss combines LogSoftmax and NLLLoss
+    # cross entropy handles the softmax internally
     loss_module = nn.CrossEntropyLoss()
 
-    # TODO: Training loop including validation
-    # TODO: Do optimization with the simple SGD optimizer
     optimizer = optim.SGD(model.parameters(), lr=lr)
 
     val_accuracies = []
@@ -198,32 +196,32 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     best_model = None
 
     for epoch in range(epochs):
-        # Training phase
-        model.train()  # Set model to training mode
+        # training phase
+        model.train()
         epoch_losses = []
 
         for data, targets in tqdm(cifar10_loader['train'], desc=f'Epoch {epoch+1}/{epochs}', leave=False):
-            # Move data to device
+            # move batch to device
             data = data.to(device)
             targets = targets.to(device)
 
-            # Zero gradients
+            # clear stale gradients
             optimizer.zero_grad()
 
-            # Forward pass
+            # forward pass
             predictions = model(data)
 
-            # Compute loss
+            # compute loss
             loss = loss_module(predictions, targets)
             epoch_losses.append(loss.item())
 
-            # Backward pass
+            # backward pass
             loss.backward()
 
-            # Update parameters
+            # optimizer step
             optimizer.step()
 
-        # Validation phase
+        # validation phase
         val_accuracy = evaluate_model(model, cifar10_loader['validation'])
         val_accuracies.append(val_accuracy)
 
@@ -237,11 +235,11 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
             best_val_accuracy = val_accuracy
             best_model = deepcopy(model)
 
-    # TODO: Test best model
+    # evaluate the top checkpoint on the test set
     test_accuracy = evaluate_model(best_model, cifar10_loader['test'])
     print(f'Test Accuracy: {test_accuracy:.4f}')
 
-    # TODO: Add any information you might want to save for plotting
+    # pack metrics for later plotting
     logging_dict = {
         'train_losses': train_losses,
         'val_accuracies': val_accuracies,

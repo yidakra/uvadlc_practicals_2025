@@ -50,17 +50,17 @@ class LinearModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Kaiming initialization for weights
-        # For ReLU/ELU activations, use std = sqrt(2/fan_in)
+        # using kaiming initialization for elu layers
+        # relu and elu use std = sqrt(2 / fan_in)
         std = np.sqrt(2.0 / in_features)
         self.params['weight'] = np.random.normal(0, std, (out_features, in_features))
         self.params['bias'] = np.zeros((1, out_features))
 
-        # Initialize gradients with zeros
+        # stash zeroed gradients for later updates
         self.grads['weight'] = np.zeros((out_features, in_features))
         self.grads['bias'] = np.zeros((1, out_features))
 
-        # Cache for backward pass
+        # keep input for the backward pass
         self.cache = None
         #######################
         # END OF YOUR CODE    #
@@ -84,11 +84,10 @@ class LinearModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Forward pass: Y = XW^T + B
-        # Store input for backward pass
+        # remember the input for backward
         self.cache = x
 
-        # Compute output: out = x @ W^T + b
+        # compute the linear response
         out = x @ self.params['weight'].T + self.params['bias']
         #######################
         # END OF YOUR CODE    #
@@ -113,22 +112,15 @@ class LinearModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Backward pass
-        # dout has shape (batch_size, out_features)
-        # From the PDF Question 1:
-        # dL/dW = (dL/dY)^T @ X, shape (out_features, in_features)
-        # dL/db = sum over batch of dL/dY, shape (1, out_features)
-        # dL/dX = dL/dY @ W, shape (batch_size, in_features)
-
         x = self.cache
 
-        # Gradient w.r.t. weights: dL/dW = dout^T @ x
+        # accumulate gradients for weights and bias
         self.grads['weight'] = dout.T @ x
 
-        # Gradient w.r.t. bias: sum over batch dimension
+        # sum over the batch for the bias gradient
         self.grads['bias'] = np.sum(dout, axis=0, keepdims=True)
 
-        # Gradient w.r.t. input: dL/dX = dout @ W
+        # propagate the gradient downstream
         dx = dout @ self.params['weight']
         #######################
         # END OF YOUR CODE    #
@@ -179,7 +171,7 @@ class ELUModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # ELU(x) = x if x > 0, else alpha * (exp(x) - 1)
+        # compute elu with its positive and negative halves
         self.cache = x
         out = np.where(x > 0, x, self.alpha * (np.exp(x) - 1))
         #######################
@@ -203,13 +195,10 @@ class ELUModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Derivative of ELU:
-        # dELU/dx = 1 if x > 0
-        # dELU/dx = alpha * exp(x) if x <= 0
         x = self.cache
         grad = np.where(x > 0, 1.0, self.alpha * np.exp(x))
 
-        # Apply chain rule with Hadamard product (element-wise multiplication)
+        # apply the chain rule elementwise
         dx = dout * grad
         #######################
         # END OF YOUR CODE    #
@@ -259,13 +248,12 @@ class SoftMaxModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Softmax with max trick for numerical stability
-        # Y_ij = exp(X_ij - max_k(X_ik)) / sum_k(exp(X_ik - max_k(X_ik)))
+        # use the max trick to keep the exponentials stable
         x_max = np.max(x, axis=1, keepdims=True)
         exp_x = np.exp(x - x_max)
         out = exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
-        # Store output for backward pass
+        # cache the probabilities for backward
         self.cache = out
         #######################
         # END OF YOUR CODE    #
@@ -288,16 +276,10 @@ class SoftMaxModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Backward pass for softmax
-        # For each sample i and class j:
-        # dL/dX_ij = sum_k (dL/dY_ik * dY_ik/dX_ij)
-        #          = sum_k (dL/dY_ik * Y_ik * (δ_jk - Y_ij))
-        #          = Y_ij * (dL/dY_ij - sum_k(dL/dY_ik * Y_ik))
-
         y = self.cache
-        # Compute sum_k(dout_ik * y_ik) for each sample
+        # compute the dot between upstream grad and probabilities per sample
         sum_term = np.sum(dout * y, axis=1, keepdims=True)
-        # Apply the formula: dx = y * (dout - sum_term)
+        # pull gradients back through the softmax
         dx = y * (dout - sum_term)
         #######################
         # END OF YOUR CODE    #
@@ -343,21 +325,16 @@ class CrossEntropyModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Cross entropy loss: L = -1/S * sum_i,k (T_ik * log(Y_ik))
-        # x is the predicted probabilities (after softmax)
-        # y can be class indices or one-hot encoded
-
         batch_size = x.shape[0]
 
-        # Handle both class indices and one-hot encoded labels
+        # support class indices or one-hot targets
         if y.ndim == 1:
-            # y is class indices, convert to one-hot
             n_classes = x.shape[1]
             y_one_hot = np.zeros_like(x)
             y_one_hot[np.arange(batch_size), y] = 1
             y = y_one_hot
 
-        # Compute cross entropy loss with small epsilon for numerical stability
+        # guard against log(0) with a small epsilon
         epsilon = 1e-12
         out = -np.mean(np.sum(y * np.log(x + epsilon), axis=1))
         #######################
@@ -382,18 +359,16 @@ class CrossEntropyModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Backward pass: dL/dY = -1/S * T / Y (element-wise division)
         batch_size = x.shape[0]
 
-        # Handle both class indices and one-hot encoded labels
+        # support class indices or one-hot targets
         if y.ndim == 1:
-            # y is class indices, convert to one-hot
             n_classes = x.shape[1]
             y_one_hot = np.zeros_like(x)
             y_one_hot[np.arange(batch_size), y] = 1
             y = y_one_hot
 
-        # Gradient: dL/dx = -1/S * y / x
+        # compute the gradient of the loss
         epsilon = 1e-12
         dx = -y / (x + epsilon) / batch_size
         #######################

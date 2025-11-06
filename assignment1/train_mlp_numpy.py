@@ -53,17 +53,16 @@ def accuracy(predictions, targets):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    # Get predicted class (argmax over class dimension)
+    # pick the highest scoring class
     predicted_classes = np.argmax(predictions, axis=1)
 
-    # Handle both 1D class indices and 2D one-hot encoded targets
+    # if targets are one hot grab their indices
     if targets.ndim == 2:
-        # One-hot encoded, convert to class indices
         target_classes = np.argmax(targets, axis=1)
     else:
         target_classes = targets
 
-    # Compute accuracy
+    # average correct predictions
     accuracy = np.mean(predicted_classes == target_classes)
     #######################
     # END OF YOUR CODE    #
@@ -96,14 +95,14 @@ def evaluate_model(model, data_loader):
     total_samples = 0
 
     for data, targets in data_loader:
-        # Flatten images: (batch_size, C, H, W) -> (batch_size, C*H*W)
+        # flatten images to plain vectors
         batch_size = data.shape[0]
         data = data.reshape(batch_size, -1)
 
-        # Forward pass
+        # run the network forward
         predictions = model.forward(data)
 
-        # Compute accuracy for this batch
+        # tally correct predictions for this batch
         predicted_classes = np.argmax(predictions, axis=1)
         if targets.ndim == 2:
             target_classes = np.argmax(targets, axis=1)
@@ -166,46 +165,44 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     # PUT YOUR CODE HERE  #
     #######################
 
-    # TODO: Initialize model and loss module
-    # CIFAR-10 images are 3x32x32 = 3072 pixels, 10 classes
+    # cifar10 gives 3x32x32 images so flatten to 3072
     n_inputs = 3 * 32 * 32
     n_classes = 10
     model = MLP(n_inputs, hidden_dims, n_classes)
     loss_module = CrossEntropyModule()
 
-    # TODO: Training loop including validation
     val_accuracies = []
     train_losses = []
     best_val_accuracy = 0
     best_model = None
 
     for epoch in range(epochs):
-        # Training phase
+        # training phase
         epoch_losses = []
 
         for data, targets in tqdm(cifar10_loader['train'], desc=f'Epoch {epoch+1}/{epochs}', leave=False):
-            # Flatten images: (batch_size, C, H, W) -> (batch_size, C*H*W)
+            # flatten inputs ahead of the mlp
             batch_size_curr = data.shape[0]
             data = data.reshape(batch_size_curr, -1)
 
-            # Forward pass
+            # forward pass
             predictions = model.forward(data)
 
-            # Compute loss
+            # compute loss
             loss = loss_module.forward(predictions, targets)
             epoch_losses.append(loss)
 
-            # Backward pass
+            # backward pass
             dout = loss_module.backward(predictions, targets)
             model.backward(dout)
 
-            # Update parameters using SGD
+            # sgd update
             for module in model.modules:
                 if hasattr(module, 'params'):
                     for param_name in module.params:
                         module.params[param_name] -= lr * module.grads[param_name]
 
-        # Validation phase
+        # validation phase
         val_accuracy = evaluate_model(model, cifar10_loader['validation'])
         val_accuracies.append(val_accuracy)
 
@@ -219,11 +216,11 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
             best_val_accuracy = val_accuracy
             best_model = deepcopy(model)
 
-    # TODO: Test best model
+    # test the best model on the held-out split
     test_accuracy = evaluate_model(best_model, cifar10_loader['test'])
     print(f'Test Accuracy: {test_accuracy:.4f}')
 
-    # TODO: Add any information you might want to save for plotting
+    # collect training logs for plotting
     logging_dict = {
         'train_losses': train_losses,
         'val_accuracies': val_accuracies,

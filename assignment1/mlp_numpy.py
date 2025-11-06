@@ -54,19 +54,17 @@ class MLP(object):
         #######################
         self.modules = []
 
-        # Build the network architecture
-        # Input -> [Linear -> ELU] * len(n_hidden) -> Linear -> Softmax
+        # build the module list in forward order
         current_dim = n_inputs
 
-        # Add hidden layers with ELU activation
+        # add hidden linear blocks followed by elu
         for i, hidden_dim in enumerate(n_hidden):
-            # Linear layer (first layer is input layer)
             self.modules.append(LinearModule(current_dim, hidden_dim, input_layer=(i == 0)))
-            # ELU activation (alpha = 1.0 is standard)
+            # alpha 1.0 is the standard elu choice
             self.modules.append(ELUModule(alpha=1.0))
             current_dim = hidden_dim
 
-        # Add output layer (Linear + Softmax)
+        # finish with the classifier head
         self.modules.append(LinearModule(current_dim, n_classes, input_layer=(len(n_hidden) == 0)))
         self.modules.append(SoftMaxModule())
         #######################
@@ -90,7 +88,7 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Pass input through all modules sequentially
+        # run the sample through each module
         out = x
         for module in self.modules:
             out = module.forward(out)
@@ -114,7 +112,7 @@ class MLP(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        # Backpropagate gradients through all modules in reverse order
+        # walk backwards through the modules
         grad = dout
         for module in reversed(self.modules):
             grad = module.backward(grad)
