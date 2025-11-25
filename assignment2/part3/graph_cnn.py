@@ -24,7 +24,10 @@ class MatrixGraphConvolution(nn.Module):
 
         Hint: A[i,j] -> there is an edge from node j to node i
         """
-        adjacency_matrix = ...
+        # PUT YOUR CODE HERE  #
+        adjacency_matrix = torch.zeros(num_nodes, num_nodes, device=edge_index.device)
+        adjacency_matrix[edge_index[0], edge_index[1]] = 1
+        # END OF YOUR CODE    #
         return adjacency_matrix
 
     def make_inverted_degree_matrix(self, edge_index, num_nodes):
@@ -35,9 +38,12 @@ class MatrixGraphConvolution(nn.Module):
         :param num_nodes: number of nodes in the graph.
         :return: inverted degree matrix with shape [num_nodes, num_nodes]. Set degree of nodes without an edge to 1.
         """
-        degree_vector = ...
-        inverted_degree_vector = ...
-        inverted_degree_matrix = ...
+        # PUT YOUR CODE HERE  #
+        degree_vector = torch.bincount(edge_index[0], minlength=num_nodes).float()
+        degree_vector[degree_vector == 0] = 1
+        inverted_degree_vector = 1.0 / degree_vector
+        inverted_degree_matrix = torch.diag(inverted_degree_vector)
+        # END OF YOUR CODE    #
         return inverted_degree_matrix
 
     def forward(self, x, edge_index):
@@ -50,7 +56,9 @@ class MatrixGraphConvolution(nn.Module):
         """
         A = self.make_adjacency_matrix(edge_index, x.size(0))
         D_inv = self.make_inverted_degree_matrix(edge_index, x.size(0))
-        out = ...
+        # PUT YOUR CODE HERE  #
+        out = D_inv @ A @ x @ self.W.T + D_inv @ A @ x @ self.B.T
+        # END OF YOUR CODE    #
         return out
 
 class MessageGraphConvolution(nn.Module):
@@ -73,9 +81,15 @@ class MessageGraphConvolution(nn.Module):
 
         Hint: check out torch.Tensor.index_add function
         """
-        messages = ...
-        aggregated_messages = ...
-        sum_weight = ...
+        # PUT YOUR CODE HERE  #
+        sources, destinations = edge_index
+        messages = x[destinations]
+        aggregated_messages = torch.zeros_like(x)
+        aggregated_messages.index_add_(0, sources, messages)
+        sum_weight = torch.bincount(sources, minlength=x.size(0)).float().unsqueeze(1)
+        sum_weight[sum_weight == 0] = 1
+        aggregated_messages = aggregated_messages / sum_weight
+        # END OF YOUR CODE    #
 
         return aggregated_messages
 
@@ -87,7 +101,9 @@ class MessageGraphConvolution(nn.Module):
         :param messages: messages vector with shape [num_nodes, num_in_features]
         :return: updated values of nodes. shape: [num_nodes, num_out_features]
         """
-        x = ...
+        # PUT YOUR CODE HERE  #
+        x = (self.W @ messages.T + self.B @ x.T).T
+        # END OF YOUR CODE    #
         return x
 
     def forward(self, x, edge_index):
@@ -128,17 +144,25 @@ class GraphAttention(nn.Module):
         edge_index, _ = add_self_loops(edge_index)
 
         sources, destinations = edge_index
-        activations = ...
-        messages = ...
+        # PUT YOUR CODE HERE  #
+        activations = F.leaky_relu(self.a)
+        transformed_x = (self.W @ x.T).T
 
-        attention_inputs = ...
+        attention_inputs = torch.cat([transformed_x[sources], transformed_x[destinations]], dim=1)
 
-        edge_weights_numerator = ...
-        weighted_messages = ...
+        edge_weights_numerator = torch.exp(activations @ attention_inputs.T)
 
-        softmax_denominator = ...
+        softmax_denominator = torch.zeros(x.size(0), device=x.device)
+        softmax_denominator.index_add_(0, destinations, edge_weights_numerator)
+        softmax_denominator[softmax_denominator == 0] = 1
 
-        aggregated_messages = ...
-        return aggregated_messages, {'edge_weights': edge_weights_numerator, 'softmax_weights': softmax_denominator,
-                                     'messages': messages}
+        weighted_messages = (edge_weights_numerator / softmax_denominator[destinations]).unsqueeze(1) * transformed_x[destinations]
+
+        aggregated_messages = torch.zeros_like(transformed_x)
+        aggregated_messages.index_add_(0, sources, weighted_messages)
+        # END OF YOUR CODE    #
+        if debug:
+            return aggregated_messages, {'edge_weights': edge_weights_numerator, 'softmax_weights': softmax_denominator,
+                                         'messages': transformed_x[destinations]}
+        return aggregated_messages
 
