@@ -113,7 +113,6 @@ lightning_logs/
 *.zip
 reports/
 **/reports/
-*.pdf
 submission/
 
 # Temporary files
