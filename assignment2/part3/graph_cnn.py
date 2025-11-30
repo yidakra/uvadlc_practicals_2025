@@ -57,7 +57,7 @@ class MatrixGraphConvolution(nn.Module):
         A = self.make_adjacency_matrix(edge_index, x.size(0))
         D_inv = self.make_inverted_degree_matrix(edge_index, x.size(0))
         # PUT YOUR CODE HERE  #
-        out = D_inv @ A @ x @ self.W.T + D_inv @ A @ x @ self.B.T
+        out = D_inv @ A @ x @ self.W.T + x @ self.B.T
         # END OF YOUR CODE    #
         return out
 
@@ -145,24 +145,24 @@ class GraphAttention(nn.Module):
 
         sources, destinations = edge_index
         # PUT YOUR CODE HERE  #
-        activations = F.leaky_relu(self.a)
         transformed_x = (self.W @ x.T).T
-
+        
         attention_inputs = torch.cat([transformed_x[sources], transformed_x[destinations]], dim=1)
-
-        edge_weights_numerator = torch.exp(activations @ attention_inputs.T)
+        edge_scores = F.leaky_relu(attention_inputs @ self.a, negative_slope=0.2)
+        edge_weights_numerator = torch.exp(edge_scores)
 
         softmax_denominator = torch.zeros(x.size(0), device=x.device)
         softmax_denominator.index_add_(0, destinations, edge_weights_numerator)
         softmax_denominator[softmax_denominator == 0] = 1
 
-        weighted_messages = (edge_weights_numerator / softmax_denominator[destinations]).unsqueeze(1) * transformed_x[destinations]
+        alpha = edge_weights_numerator / softmax_denominator[destinations]
+        weighted_messages = alpha.unsqueeze(1) * transformed_x[sources]
 
         aggregated_messages = torch.zeros_like(transformed_x)
-        aggregated_messages.index_add_(0, sources, weighted_messages)
+        aggregated_messages.index_add_(0, destinations, weighted_messages)
         # END OF YOUR CODE    #
         if debug:
             return aggregated_messages, {'edge_weights': edge_weights_numerator, 'softmax_weights': softmax_denominator,
-                                         'messages': transformed_x[destinations]}
+                                         'messages': transformed_x[sources]}
         return aggregated_messages
 
