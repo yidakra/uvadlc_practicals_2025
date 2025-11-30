@@ -1,0 +1,30 @@
+[rank: 0] Seed set to 0
+/home/adeliev/.conda/envs/dl2025/lib/python3.12/site-packages/lightning_fabric/plugins/environments/slurm.py:204: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python train.py --use_flash_attn --compile --num_epochs 5 ...
+Using 16bit Automatic Mixed Precision (AMP)
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Namespace(txt_file='./assets/book_EN_grimms_fairy_tales.txt', model_type='gpt-mini', block_size=128, use_pretrained=False, abs_emb=False, train_batch_size=128, generate_batch_size=5, generate_every_n_steps=1000, learning_rate=0.0005, weight_decay=0.1, betas=(0.9, 0.95), num_epochs=5, clip_grad_norm=1.0, log_dir='./logs', seed=0, num_workers=17, progress_bar=False, use_flash_attn=True, precision='16-mixed', compile=True, pretrained_tokenizer=False, device='cuda')
+data has 540241 characters, 87 unique.
+True False
+number of parameters: 10.73M
+running on device cpu
+Finding best initial lr:   0%|          | 0/100 [00:00<?, ?it/s]Finding best initial lr:   1%|          | 1/100 [00:22<36:51, 22.33s/it]Finding best initial lr:   4%|▍         | 4/100 [00:22<06:48,  4.26s/it]Finding best initial lr:   7%|▋         | 7/100 [00:22<03:05,  1.99s/it]Finding best initial lr:  10%|█         | 10/100 [00:22<01:43,  1.14s/it]Finding best initial lr:  13%|█▎        | 13/100 [00:22<01:02,  1.39it/s]Finding best initial lr:  16%|█▌        | 16/100 [00:22<00:40,  2.08it/s]Finding best initial lr:  19%|█▉        | 19/100 [00:23<00:26,  3.02it/s]Finding best initial lr:  22%|██▏       | 22/100 [00:23<00:18,  4.23it/s]Finding best initial lr:  25%|██▌       | 25/100 [00:23<00:13,  5.76it/s]Finding best initial lr:  28%|██▊       | 28/100 [00:23<00:09,  7.61it/s]Finding best initial lr:  31%|███       | 31/100 [00:23<00:07,  9.74it/s]Finding best initial lr:  34%|███▍      | 34/100 [00:23<00:05, 12.06it/s]Finding best initial lr:  37%|███▋      | 37/100 [00:23<00:04, 14.44it/s]Finding best initial lr:  40%|████      | 40/100 [00:23<00:03, 16.73it/s]Finding best initial lr:  43%|████▎     | 43/100 [00:23<00:03, 18.80it/s]Finding best initial lr:  46%|████▌     | 46/100 [00:24<00:02, 20.57it/s]Finding best initial lr:  49%|████▉     | 49/100 [00:24<00:02, 22.01it/s]Finding best initial lr:  52%|█████▏    | 52/100 [00:24<00:02, 23.14it/s]Finding best initial lr:  55%|█████▌    | 55/100 [00:24<00:01, 24.01it/s]Finding best initial lr:  58%|█████▊    | 58/100 [00:24<00:01, 24.67it/s]Finding best initial lr:  61%|██████    | 61/100 [00:24<00:01, 25.15it/s]Finding best initial lr:  64%|██████▍   | 64/100 [00:24<00:01, 25.50it/s]Finding best initial lr:  67%|██████▋   | 67/100 [00:24<00:01, 25.72it/s]Finding best initial lr:  70%|███████   | 70/100 [00:24<00:01, 25.92it/s]Finding best initial lr:  73%|███████▎  | 73/100 [00:25<00:01, 25.99it/s]Finding best initial lr:  76%|███████▌  | 76/100 [00:25<00:00, 26.06it/s]Finding best initial lr:  79%|███████▉  | 79/100 [00:25<00:00, 26.17it/s]Finding best initial lr:  82%|████████▏ | 82/100 [00:25<00:00, 26.24it/s]Finding best initial lr:  85%|████████▌ | 85/100 [00:25<00:00, 26.30it/s]Finding best initial lr:  88%|████████▊ | 88/100 [00:25<00:00, 26.33it/s]Finding best initial lr:  91%|█████████ | 91/100 [00:25<00:00, 26.45it/s]Finding best initial lr:  94%|█████████▍| 94/100 [00:25<00:00, 26.45it/s]Finding best initial lr:  97%|█████████▋| 97/100 [00:25<00:00, 26.41it/s]Finding best initial lr: 100%|██████████| 100/100 [00:26<00:00, 26.42it/s]`Trainer.fit` stopped: `max_steps=100` reached.
+Finding best initial lr: 100%|██████████| 100/100 [00:26<00:00,  3.83it/s]
+Learning rate set to 0.000363078054770101
+Restoring states from the checkpoint path at /gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part2/.lr_find_da7c9c57-81dd-44d4-8274-abcc740c489b.ckpt
+Restored all states from the checkpoint at /gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part2/.lr_find_da7c9c57-81dd-44d4-8274-abcc740c489b.ckpt
+
+  | Name  | Type            | Params | Mode 
+--------------------------------------------------
+0 | model | OptimizedModule | 10.8 M | train
+--------------------------------------------------
+10.8 M    Trainable params
+0         Non-trainable params
+10.8 M    Total params
+43.034    Total estimated model params size (MB)
+87        Modules in train mode
+0         Modules in eval mode
+Restored all states from the checkpoint at /gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part2/.lr_find_da7c9c57-81dd-44d4-8274-abcc740c489b.ckpt
+`Trainer.fit` stopped: `max_epochs=5` reached.

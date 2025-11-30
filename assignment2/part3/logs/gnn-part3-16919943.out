@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part3/public_unittest.py", line 6, in <module>
+    from torch_geometric.utils import add_self_loops
+ModuleNotFoundError: No module named 'torch_geometric'
+Traceback (most recent call last):
+  File "/gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part3/train.py", line 1, in <module>
+    import lightning
+ModuleNotFoundError: No module named 'lightning'
+Traceback (most recent call last):
+  File "/gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part3/train.py", line 1, in <module>
+    import lightning
+ModuleNotFoundError: No module named 'lightning'
+Traceback (most recent call last):
+  File "/gpfs/home5/adeliev/uvadlc_practicals_2025/assignment2/part3/train.py", line 1, in <module>
+    import lightning
+ModuleNotFoundError: No module named 'lightning'
