@@ -70,10 +70,33 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        L_rec = None
-        L_reg = None
-        bpd = None
-        raise NotImplementedError
+        # Encode images to get mean and log_std
+        mean, log_std = self.encoder(imgs)
+
+        # Sample from latent distribution using reparameterization trick
+        std = torch.exp(log_std)
+        z = sample_reparameterize(mean, std)
+
+        # Decode to get reconstructed images (logits for categorical distribution)
+        decoder_logits = self.decoder(z)  # [B, 16, 28, 28]
+
+        # Compute reconstruction loss (cross-entropy)
+        # Need to reshape for cross_entropy: [B*H*W, num_classes] and [B*H*W]
+        batch_size = imgs.shape[0]
+        decoder_logits_flat = decoder_logits.reshape(batch_size, 16, -1).permute(0, 2, 1).reshape(-1, 16)
+        imgs_flat = imgs.reshape(-1)
+
+        # Cross entropy loss without reduction (we want sum, not mean)
+        reconstruction_loss = F.cross_entropy(decoder_logits_flat, imgs_flat, reduction='sum')
+        L_rec = reconstruction_loss / batch_size  # Average over batch
+
+        # Compute regularization loss (KL divergence)
+        kld_per_sample = KLD(mean, log_std)
+        L_reg = kld_per_sample.mean()  # Average over batch
+
+        # Compute bits per dimension
+        elbo = L_rec + L_reg
+        bpd = elbo_to_bpd(elbo, imgs.shape)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -91,8 +114,25 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        x_samples = None
-        raise NotImplementedError
+        # Sample from prior p(z) = N(0, I)
+        z = torch.randn(batch_size, self.hparams.z_dim).to(self.decoder.device)
+
+        # Decode to get logits
+        decoder_logits = self.decoder(z)  # [batch_size, 16, 28, 28]
+
+        # Sample from categorical distribution
+        # Apply softmax to get probabilities
+        probs = torch.softmax(decoder_logits, dim=1)  # [batch_size, 16, 28, 28]
+
+        # Sample from categorical distribution for each pixel
+        # Reshape to [batch_size, 16, 28*28] for easier sampling
+        probs_flat = probs.reshape(batch_size, 16, -1).permute(0, 2, 1)  # [batch_size, 28*28, 16]
+
+        # Sample using multinomial
+        samples_flat = torch.multinomial(probs_flat.reshape(-1, 16), num_samples=1).squeeze(-1)
+
+        # Reshape back to image shape [batch_size, 1, 28, 28]
+        x_samples = samples_flat.reshape(batch_size, 1, 28, 28)
         #######################
         # END OF YOUR CODE    #
         #######################
