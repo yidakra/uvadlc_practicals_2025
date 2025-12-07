@@ -21,14 +21,14 @@ import numpy as np
 
 def sample_reparameterize(mean, std):
     """
-    Perform the reparameterization trick to sample from a distribution with the given mean and std
-    Inputs:
-        mean - Tensor of arbitrary shape and range, denoting the mean of the distributions
-        std - Tensor of arbitrary shape with strictly positive values. Denotes the standard deviation
-              of the distribution
-    Outputs:
-        z - A sample of the distributions, with gradient support for both mean and std.
-            The tensor should have the same shape as the mean and std input tensors.
+    Sample from a Gaussian distribution using the reparameterization trick.
+    
+    Parameters:
+        mean (Tensor): Mean of the distribution; can have any shape.
+        std (Tensor): Standard deviation, broadcastable to `mean`. Must not contain negative values.
+    
+    Returns:
+        z (Tensor): A sample with the same shape as `mean` and `std`. Gradients propagate to `mean` and `std`.
     """
     assert not (std < 0).any().item(), "The reparameterization trick got a negative std as input. " + \
                                        "Are you sure your input is std and not log_std?"
@@ -48,14 +48,15 @@ def sample_reparameterize(mean, std):
 
 def KLD(mean, log_std):
     """
-    Calculates the Kullback-Leibler divergence of given distributions to unit Gaussians over the last dimension.
-    See the definition of the regularization loss in Section 1.4 for the formula.
-    Inputs:
-        mean - Tensor of arbitrary shape and range, denoting the mean of the distributions.
-        log_std - Tensor of arbitrary shape and range, denoting the log standard deviation of the distributions.
-    Outputs:
-        KLD - Tensor with one less dimension than mean and log_std (summed over last dimension).
-              The values represent the Kullback-Leibler divergence to unit Gaussians.
+    Compute the Kullback–Leibler divergence from N(mean, exp(2*log_std)) to the standard normal, summed over the last dimension.
+    
+    Parameters:
+        mean: Tensor of means for each Gaussian.
+        log_std: Tensor of log standard deviations (natural log of the standard deviation), broadcastable to mean.
+    
+    Returns:
+        Tensor of KLD values with the last dimension reduced (shape equal to mean.shape[:-1]). Each value equals
+        0.5 * sum(exp(2 * log_std) + mean**2 - 1 - 2 * log_std) taken over the last dimension.
     """
 
     #######################
@@ -72,12 +73,14 @@ def KLD(mean, log_std):
 
 def elbo_to_bpd(elbo, img_shape):
     """
-    Converts the summed negative log likelihood given by the ELBO into the bits per dimension score.
-    Inputs:
-        elbo - Tensor of shape [batch_size]
-        img_shape - Shape of the input images, representing [batch, channels, height, width]
-    Outputs:
-        bpd - The negative log likelihood in bits per dimension for the given image.
+    Convert summed negative log-likelihood (ELBO) per example into bits-per-dimension for a given image shape.
+    
+    Parameters:
+        elbo (Tensor): Negative log-likelihood per example, shape [batch_size], expressed in nats.
+        img_shape (Sequence[int]): Image tensor shape [batch, channels, height, width] used to determine the number of dimensions per example.
+    
+    Returns:
+        Tensor: Bits-per-dimension (bpd) for each example, shape [batch_size]; computed by converting nats to bits and dividing by the number of image dimensions (channels * height * width).
     """
     #######################
     # PUT YOUR CODE HERE  #
@@ -98,15 +101,16 @@ def elbo_to_bpd(elbo, img_shape):
 @torch.no_grad()
 def visualize_manifold(decoder, grid_size=20):
     """
-    Visualize a manifold over a 2 dimensional latent space. The images in the manifold
-    should represent the decoder's output means (not binarized samples of those).
-    Inputs:
-        decoder - Decoder model such as LinearDecoder or ConvolutionalDecoder.
-        grid_size - Number of steps/images to have per axis in the manifold.
-                    Overall you need to generate grid_size**2 images, and the distance
-                    between different latents in percentiles is 1/grid_size
-    Outputs:
-        img_grid - Grid of images representing the manifold.
+    Builds an image grid visualizing the decoder's output means across a 2-dimensional latent manifold.
+    
+    The decoder is sampled on a grid of latent-percentiles mapped through the standard normal inverse CDF; decoder outputs are interpreted as categorical logits per pixel (expected pixel value computed from channel probabilities), scaled to [0, 1], and arranged into a grid image.
+    
+    Parameters:
+        decoder: A decoder callable that accepts a batch of latent vectors with shape [N, 2] and returns logits with shape [N, K, H, W] (the implementation assumes K == 16). The decoder must expose a `.device` attribute used for tensor placement.
+        grid_size (int): Number of points per axis in the latent grid; total images produced = grid_size**2.
+    
+    Returns:
+        img_grid (torch.Tensor): A single image tensor containing the grid of decoded means, suitable for visualization (shape [C, H_img, W_img]).
     """
 
     ## Hints:
@@ -154,4 +158,3 @@ def visualize_manifold(decoder, grid_size=20):
     #######################
 
     return img_grid
-

@@ -54,6 +54,25 @@ def load_cifar10(batch_size=4, valid_ratio=0.75, test_bs_1 = True, augmentations
 
 
 def train(model, trainloader, validloader, num_epochs=25, defense_strategy = STANDARD, defense_args = {}):
+    """
+    Train a PyTorch model on CIFAR-10 with optional adversarial defense strategies and return the best-validation model weights.
+    
+    Trains `model` using SGD with a StepLR scheduler, evaluating on `validloader` each epoch and saving the weights that achieve the highest validation accuracy. Supports three defense strategies during training:
+    - STANDARD: normal training on clean inputs.
+    - FGSM: uses `fgsm_loss` to compute adversarial loss and predictions.
+    - PGD: generates PGD adversarial examples, concatenates them with the original batch, and trains on the augmented batch.
+    
+    Parameters:
+        model (torch.nn.Module): The model to train; its parameters will be updated and the best-validation weights will be loaded before return.
+        trainloader (torch.utils.data.DataLoader): DataLoader for the training set.
+        validloader (torch.utils.data.DataLoader): DataLoader for the validation set.
+        num_epochs (int, optional): Number of training epochs. Defaults to 25.
+        defense_strategy (str, optional): One of STANDARD, FGSM, or PGD controlling adversarial training behavior. Defaults to STANDARD.
+        defense_args (dict, optional): Strategy-specific arguments passed to FGSM/PGD helpers (e.g., epsilon, alpha, steps). Defaults to {}.
+    
+    Returns:
+        torch.nn.Module: The input `model` with its parameters set to the weights that achieved the best validation accuracy during training.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     since = time.time()
     #define criterion

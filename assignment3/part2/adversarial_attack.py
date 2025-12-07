@@ -34,6 +34,17 @@ def fgsm_attack(image, data_grad, epsilon = 0.25):
     # PUT YOUR CODE HERE  #
     #######################
     # Get the sign of the gradient
+    """
+    Generate an adversarial example by applying the Fast Gradient Sign Method (FGSM) perturbation to an input image.
+    
+    Parameters:
+        image (torch.Tensor): Original input tensor to perturb.
+        data_grad (torch.Tensor): Gradient of the loss with respect to `image`.
+        epsilon (float): Perturbation magnitude to scale the sign of `data_grad`.
+    
+    Returns:
+        torch.Tensor: Perturbed image tensor with values clamped to the [0, 1] range.
+    """
     sign_data_grad = data_grad.sign()
 
     # Create the perturbed image by adding epsilon * sign of gradient
@@ -49,6 +60,23 @@ def fgsm_attack(image, data_grad, epsilon = 0.25):
 
     
 def fgsm_loss(model, criterion, inputs, labels, defense_args, return_preds = True):
+    """
+    Compute a combined loss that mixes the model's clean loss with an FGSM adversarial loss, and optionally return the original predictions.
+    
+    Parameters:
+        model (torch.nn.Module): The neural network to evaluate.
+        criterion (callable): Loss function used for both clean and adversarial examples.
+        inputs (torch.Tensor): Batch of input tensors (requires_grad will be enabled).
+        labels (torch.Tensor): Ground-truth labels corresponding to inputs.
+        defense_args (dict): Dictionary containing attack/hyperparameter values. Must include:
+            - ALPHA: blend factor in [0, 1] used as alpha * clean_loss + (1 - alpha) * adv_loss.
+            - EPSILON: perturbation magnitude for the FGSM attack.
+        return_preds (bool): If True, also return the model's predicted class indices on the original inputs.
+    
+    Returns:
+        If `return_preds` is False: loss (torch.Tensor) — the combined scalar loss.
+        If `return_preds` is True: (loss (torch.Tensor), preds (torch.Tensor)) — the combined loss and a 1-D tensor of predicted class indices from the original (clean) inputs.
+    """
     alpha = defense_args[ALPHA]
     epsilon = defense_args[EPSILON]
     inputs.requires_grad = True
@@ -91,6 +119,24 @@ def fgsm_loss(model, criterion, inputs, labels, defense_args, return_preds = Tru
 
 
 def pgd_attack(model, data, target, criterion, args):
+    """
+    Generate an adversarial example from `data` using Projected Gradient Descent (PGD).
+    
+    Performs `num_iter` iterative perturbation steps where each step takes a signed-gradient step of size `alpha`, then projects the perturbed sample back into the L-infinity ball of radius `epsilon` around the original `data` and clamps pixel values to [0, 1].
+    
+    Parameters:
+        model: torch.nn.Module — model used to compute loss and gradients.
+        data (torch.Tensor): Original input batch to be attacked.
+        target (torch.Tensor): Ground-truth labels corresponding to `data`.
+        criterion: Loss function used to compute the attack gradient.
+        args (Mapping): Mapping containing numeric attack hyperparameters:
+            - args[ALPHA]: step size for each PGD iteration.
+            - args[EPSILON]: maximum L-infinity perturbation magnitude.
+            - args[NUM_ITER]: number of PGD iterations.
+    
+    Returns:
+        torch.Tensor: Adversarially perturbed version of `data` with the same shape, constrained to be within `epsilon` (L-infinity) of the original and with values in [0, 1].
+    """
     alpha = args[ALPHA]
     epsilon = args[EPSILON]
     num_iter = args[NUM_ITER]
@@ -142,6 +188,19 @@ def pgd_attack(model, data, target, criterion, args):
 
 
 def test_attack(model, test_loader, attack_function, attack_args):
+    """
+    Evaluate model robustness on a dataset using a specified adversarial attack.
+    
+    Parameters:
+        model: torch.nn.Module — model to evaluate.
+        test_loader: Iterable — dataloader yielding (data, target) batches.
+        attack_function: constant — attack identifier (e.g., FGSM or PGD) determining which attack to apply.
+        attack_args: dict-like — attack hyperparameters (expects keys like EPSILON, ALPHA, NUM_ITER depending on attack).
+    
+    Returns:
+        final_acc (float): Fraction of examples that remained correctly classified after the attack.
+        adv_examples (list): Up to five tuples (init_pred, final_pred, original_image, adversarial_image) saved for visualization; images are denormalized CPU tensors.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     correct = 0
     criterion = nn.CrossEntropyLoss()
