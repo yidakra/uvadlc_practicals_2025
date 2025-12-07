@@ -30,15 +30,33 @@ class CNNEncoder(nn.Module):
                           layers. Deeper layers might use a duplicate of it.
             z_dim - Dimensionality of latent representation z
         """
-        super().__init__()
-
         # For an intial architecture, you can use the encoder of Tutorial 9.
         # Feel free to experiment with the architecture yourself, but the one specified here is
         # sufficient for the assignment.
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        raise NotImplementedError
+        super().__init__()
+
+        # CNN architecture similar to Tutorial 9
+        # Encodes 28x28 images through convolutional layers
+        self.net = nn.Sequential(
+            nn.Conv2d(num_input_channels, num_filters, kernel_size=3, padding=1, stride=2),  # 28x28 -> 14x14
+            nn.ReLU(),
+            nn.Conv2d(num_filters, num_filters, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(num_filters, 2*num_filters, kernel_size=3, padding=1, stride=2),  # 14x14 -> 7x7
+            nn.ReLU(),
+            nn.Conv2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1, stride=2),  # 7x7 -> 4x4
+            nn.ReLU(),
+            nn.Flatten(),  # flatten to 2*num_filters*4*4
+        )
+
+        # Linear layers to output mean and log_std for latent distribution
+        self.fc_mean = nn.Linear(2*num_filters*4*4, z_dim)
+        self.fc_log_std = nn.Linear(2*num_filters*4*4, z_dim)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -56,9 +74,12 @@ class CNNEncoder(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        mean = None
-        log_std = None
-        raise NotImplementedError
+        # Pass through convolutional layers
+        h = self.net(x)
+
+        # Output mean and log_std for the latent distribution
+        mean = self.fc_mean(h)
+        log_std = self.fc_log_std(h)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -76,15 +97,33 @@ class CNNDecoder(nn.Module):
                           layers. Early layers might use a duplicate of it.
             z_dim - Dimensionality of latent representation z
         """
-        super().__init__()
-
         # For an intial architecture, you can use the decoder of Tutorial 9.
         # Feel free to experiment with the architecture yourself, but the one specified here is
         # sufficient for the assignment.
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        raise NotImplementedError
+        super().__init__()
+
+        # Linear layer to map from latent space to spatial feature map
+        self.linear = nn.Sequential(
+            nn.Linear(z_dim, 2*num_filters*4*4),
+            nn.ReLU()
+        )
+
+        # Transposed convolutions to upsample back to 28x28
+        # Mirror the encoder architecture
+        self.net = nn.Sequential(
+            nn.ConvTranspose2d(2*num_filters, 2*num_filters, kernel_size=3, output_padding=1, padding=1, stride=2),  # 4x4 -> 7x7
+            nn.ReLU(),
+            nn.Conv2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(2*num_filters, num_filters, kernel_size=3, output_padding=1, padding=1, stride=2),  # 7x7 -> 14x14
+            nn.ReLU(),
+            nn.Conv2d(num_filters, num_filters, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(num_filters, num_input_channels, kernel_size=3, output_padding=1, padding=1, stride=2),  # 14x14 -> 28x28
+        )
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -102,8 +141,12 @@ class CNNDecoder(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        x = None
-        raise NotImplementedError
+        # Map latent vector to feature map
+        x = self.linear(z)
+        x = x.reshape(z.shape[0], -1, 4, 4)  # reshape to [B, 2*num_filters, 4, 4]
+
+        # Upsample through transposed convolutions
+        x = self.net(x)
         #######################
         # END OF YOUR CODE    #
         #######################

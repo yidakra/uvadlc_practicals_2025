@@ -35,8 +35,11 @@ def sample_reparameterize(mean, std):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    z = None
-    raise NotImplementedError
+    # Sample epsilon from standard normal distribution
+    epsilon = torch.randn_like(std)
+
+    # Reparameterization: z = mean + std * epsilon
+    z = mean + std * epsilon
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -58,8 +61,9 @@ def KLD(mean, log_std):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    KLD = None
-    raise NotImplementedError
+    # Compute KL divergence using the closed form formula from Equation 13
+    # KL(N(mu, sigma^2) || N(0, 1)) = 0.5 * sum(exp(2*log_sigma) + mu^2 - 1 - 2*log_sigma)
+    KLD = 0.5 * torch.sum(torch.exp(2 * log_std) + mean**2 - 1 - 2 * log_std, dim=-1)
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -78,8 +82,13 @@ def elbo_to_bpd(elbo, img_shape):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    bpd = None
-    raise NotImplementedError
+    # Calculate total number of dimensions per image (excluding batch dimension)
+    # For MNIST: channels * height * width = 1 * 28 * 28 = 784
+    num_dims = np.prod(img_shape[1:])
+
+    # Convert nats to bits: multiply by log2(e)
+    # Normalize by number of dimensions
+    bpd = elbo * np.log2(np.e) / num_dims
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -110,8 +119,36 @@ def visualize_manifold(decoder, grid_size=20):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    img_grid = None
-    raise NotImplementedError
+    # Create percentile values for grid_size points
+    # Range: [0.5/grid_size, 1.5/grid_size, ..., (grid_size-0.5)/grid_size]
+    percentiles = torch.linspace(0.5 / grid_size, 1 - 0.5 / grid_size, grid_size)
+
+    # Use inverse CDF (ppf) of standard normal to get z values at these percentiles
+    normal_dist = torch.distributions.Normal(0, 1)
+    z_values = normal_dist.icdf(percentiles)
+
+    # Create 2D grid of z values
+    z1_grid, z2_grid = torch.meshgrid(z_values, z_values, indexing='ij')
+
+    # Flatten and stack to create batch of latent vectors [grid_size^2, 2]
+    z_grid = torch.stack([z1_grid.flatten(), z2_grid.flatten()], dim=1).to(decoder.device)
+
+    # Decode the latent vectors to get reconstructions
+    decoder_output = decoder(z_grid)  # [grid_size^2, 16, 28, 28]
+
+    # Apply softmax to get probabilities and take the mean (expected value)
+    # For categorical distribution, the mean is sum of k * p_k
+    probs = torch.softmax(decoder_output, dim=1)  # [grid_size^2, 16, 28, 28]
+
+    # Calculate expected pixel values: sum over categories weighted by probabilities
+    # Categories are 0-15, so we weight by k
+    pixel_values = torch.sum(probs * torch.arange(16, device=decoder.device).view(1, -1, 1, 1), dim=1, keepdim=True)
+
+    # Normalize to [0, 1] range for visualization
+    pixel_values = pixel_values / 15.0
+
+    # Create grid of images
+    img_grid = make_grid(pixel_values, nrow=grid_size, normalize=False, pad_value=0.5)
     #######################
     # END OF YOUR CODE    #
     #######################
