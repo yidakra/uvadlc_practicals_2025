@@ -4,6 +4,15 @@ import numpy as np
 import torch.nn.functional as F
 from globals import FGSM, PGD, ALPHA, EPSILON, NUM_ITER
 
+_CIFAR10_MEAN = torch.tensor([0.4914, 0.4822, 0.4465]).view(1, -1, 1, 1)
+_CIFAR10_STD = torch.tensor([0.247, 0.243, 0.261]).view(1, -1, 1, 1)
+
+
+def _normalized_bounds(device):
+    lower = ((0.0 - _CIFAR10_MEAN) / _CIFAR10_STD).to(device)
+    upper = ((1.0 - _CIFAR10_MEAN) / _CIFAR10_STD).to(device)
+    return lower, upper
+
 def denormalize(batch, mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261]):
     """
     Convert a batch of tensors to their original scale.
@@ -39,8 +48,9 @@ def fgsm_attack(image, data_grad, epsilon = 0.25):
     # Create the perturbed image by adding epsilon * sign of gradient
     perturbed_image = image + epsilon * sign_data_grad
 
-    # Clamp to maintain valid image range (assuming normalized images)
-    perturbed_image = torch.clamp(perturbed_image, 0, 1)
+    # Clamp to maintain valid image range in normalized space
+    lower, upper = _normalized_bounds(image.device)
+    perturbed_image = torch.clamp(perturbed_image, lower, upper)
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -130,8 +140,9 @@ def pgd_attack(model, data, target, criterion, args):
             perturbation = torch.clamp(perturbed_data - data, min=-epsilon, max=epsilon)
             perturbed_data = data + perturbation
 
-            # Clamp to valid image range
-            perturbed_data = torch.clamp(perturbed_data, 0, 1)
+            # Clamp to valid image range in normalized space
+            lower, upper = _normalized_bounds(data.device)
+            perturbed_data = torch.clamp(perturbed_data, lower, upper)
 
         # Detach for next iteration
         perturbed_data = perturbed_data.detach()

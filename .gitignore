@@ -112,6 +112,9 @@ lightning_logs/
 !assignment2/**/logs/
 !assignment2/**/logs/**
 !assignment2/**/logs/**/*.ckpt
+!assignment3/**/logs/
+!assignment3/**/logs/**
+!assignment3/**/logs/**/*.ckpt
 
 # Assignment-specific
 *.zip

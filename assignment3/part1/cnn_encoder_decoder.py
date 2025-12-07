@@ -114,7 +114,7 @@ class CNNDecoder(nn.Module):
         # Transposed convolutions to upsample back to 28x28
         # Mirror the encoder architecture
         self.net = nn.Sequential(
-            nn.ConvTranspose2d(2*num_filters, 2*num_filters, kernel_size=3, output_padding=1, padding=1, stride=2),  # 4x4 -> 7x7
+            nn.ConvTranspose2d(2*num_filters, 2*num_filters, kernel_size=3, output_padding=0, padding=1, stride=2),  # 4x4 -> 7x7
             nn.ReLU(),
             nn.Conv2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1),
             nn.ReLU(),
