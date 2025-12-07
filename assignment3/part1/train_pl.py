@@ -48,15 +48,15 @@ class VAE(pl.LightningModule):
 
     def forward(self, imgs):
         """
-        The forward function calculates the VAE-loss for a given batch of images.
-        Inputs:
-            imgs - Batch of images of shape [B,C,H,W].
-                   The input images are converted to 4-bit, i.e. integers between 0 and 15.
-        Ouptuts:
-            L_rec - The average reconstruction loss of the batch. Shape: single scalar
-            L_reg - The average regularization loss (KLD) of the batch. Shape: single scalar
-            bpd - The average bits per dimension metric of the batch.
-                  This is also the loss we train on. Shape: single scalar
+        Compute the VAE reconstruction loss, regularization loss, and bits-per-dimension for a batch of 4-bit images.
+        
+        Parameters:
+            imgs (torch.Tensor): Input batch of images with shape [B, C, H, W]; values are integer class indices in 0–15 representing 4-bit pixel intensities.
+        
+        Returns:
+            L_rec (torch.Tensor): Average reconstruction loss over the batch (scalar).
+            L_reg (torch.Tensor): Average KL-divergence regularization loss over the batch (scalar).
+            bpd (torch.Tensor): Bits-per-dimension metric computed from the ELBO for the batch (scalar).
         """
 
         # Hints:
@@ -105,11 +105,13 @@ class VAE(pl.LightningModule):
     @torch.no_grad()
     def sample(self, batch_size):
         """
-        Function for sampling a new batch of random images.
-        Inputs:
-            batch_size - Number of images to generate
-        Outputs:
-            x_samples - Sampled, 4-bit images. Shape: [B,C,H,W]
+        Generate a batch of sampled 4-bit images from the model's prior.
+        
+        Parameters:
+            batch_size (int): Number of images to generate.
+        
+        Returns:
+            x_samples (torch.LongTensor): Tensor of discrete pixel values in {0,...,15} with shape [batch_size, 1, 28, 28].
         """
         #######################
         # PUT YOUR CODE HERE  #
@@ -295,4 +297,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     train_vae(args)
-

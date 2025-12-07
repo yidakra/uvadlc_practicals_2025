@@ -22,14 +22,14 @@ import numpy as np
 class CNNEncoder(nn.Module):
     def __init__(self, num_input_channels: int = 1, num_filters: int = 32,
                  z_dim: int = 20):
-        """Encoder with a CNN network
-        Inputs:
-            num_input_channels - Number of input channels of the image. For
-                                 MNIST, this parameter is 1
-            num_filters - Number of channels we use in the first convolutional
-                          layers. Deeper layers might use a duplicate of it.
-            z_dim - Dimensionality of latent representation z
         """
+                 Create a CNN-based encoder that maps input images to parameters of a latent distribution.
+                 
+                 Parameters:
+                     num_input_channels (int): Number of image channels (e.g., 1 for MNIST).
+                     num_filters (int): Number of filters in the first convolutional layer; deeper layers use multiples of this.
+                     z_dim (int): Dimensionality of the latent representation produced for mean and log standard deviation.
+                 """
         # For an intial architecture, you can use the encoder of Tutorial 9.
         # Feel free to experiment with the architecture yourself, but the one specified here is
         # sufficient for the assignment.
@@ -63,12 +63,14 @@ class CNNEncoder(nn.Module):
 
     def forward(self, x):
         """
-        Inputs:
-            x - Input batch with images of shape [B,C,H,W] of type long with values between 0 and 15.
-        Outputs:
-            mean - Tensor of shape [B,z_dim] representing the predicted mean of the latent distributions.
-            log_std - Tensor of shape [B,z_dim] representing the predicted log standard deviation
-                      of the latent distributions.
+        Encode a batch of images into latent distribution parameters.
+        
+        Parameters:
+            x (torch.Tensor): Input batch with shape [B, C, H, W], integer values in {0,…,15}. Inputs are cast to float and normalized to the range [-1, 1].
+        
+        Returns:
+            mean (torch.Tensor): Tensor of shape [B, z_dim] containing the predicted latent means.
+            log_std (torch.Tensor): Tensor of shape [B, z_dim] containing the predicted latent log standard deviations.
         """
         x = x.float() / 15 * 2.0 - 1.0  # Move images between -1 and 1
         #######################
@@ -89,14 +91,14 @@ class CNNEncoder(nn.Module):
 class CNNDecoder(nn.Module):
     def __init__(self, num_input_channels: int = 16, num_filters: int = 32,
                  z_dim: int = 20):
-        """Decoder with a CNN network.
-        Inputs:
-            num_input_channels - Number of channels of the image to
-                                 reconstruct. For a 4-bit MNIST, this parameter is 16
-            num_filters - Number of filters we use in the last convolutional
-                          layers. Early layers might use a duplicate of it.
-            z_dim - Dimensionality of latent representation z
         """
+                 Create a CNN decoder that maps latent vectors to image logits.
+                 
+                 Parameters:
+                     num_input_channels (int): Number of output channels in reconstructed images (e.g., 16 for 4-bit MNIST).
+                     num_filters (int): Base number of convolutional filters used in decoder feature maps.
+                     z_dim (int): Dimensionality of the latent representation to be decoded.
+                 """
         # For an intial architecture, you can use the decoder of Tutorial 9.
         # Feel free to experiment with the architecture yourself, but the one specified here is
         # sufficient for the assignment.
@@ -130,12 +132,13 @@ class CNNDecoder(nn.Module):
 
     def forward(self, z):
         """
-        Inputs:
-            z - Latent vector of shape [B,z_dim]
-        Outputs:
-            x - Prediction of the reconstructed image based on z.
-                This should be a logit output *without* a softmax applied on it.
-                Shape: [B,num_input_channels,28,28]
+        Decode a batch of latent vectors into reconstructed image logits.
+        
+        Parameters:
+            z (torch.Tensor): Latent vectors with shape [B, z_dim].
+        
+        Returns:
+            torch.Tensor: Reconstructed image logits with shape [B, num_input_channels, 28, 28]; raw logits (no softmax or sigmoid applied).
         """
 
         #######################
