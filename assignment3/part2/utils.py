@@ -104,18 +104,12 @@ def train(model, trainloader, validloader, num_epochs=25, defense_strategy = STA
                         # Get adverserial examples using PGD attack
                         # Add them to the original batch
                         # Make sure the model has the correct labels
-                        #######################
-                        # PUT YOUR CODE HERE  #
-                        #######################
                         # Generate adversarial examples using PGD
                         adv_inputs = pgd_attack(model, inputs, labels, criterion, defense_args)
 
                         # Concatenate original and adversarial examples
                         inputs = torch.cat([inputs, adv_inputs], dim=0)
                         labels = torch.cat([labels, labels], dim=0)
-                        #######################
-                        # END OF YOUR CODE    #
-                        #######################
                         optimizer.zero_grad()
                         outputs = model(inputs)
                         loss = criterion(outputs, labels)

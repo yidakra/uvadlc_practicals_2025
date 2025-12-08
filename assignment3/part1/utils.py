@@ -32,17 +32,11 @@ def sample_reparameterize(mean, std):
     """
     assert not (std < 0).any().item(), "The reparameterization trick got a negative std as input. " + \
                                        "Are you sure your input is std and not log_std?"
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
     # Sample epsilon from standard normal distribution
     epsilon = torch.randn_like(std)
 
     # Reparameterization: z = mean + std * epsilon
     z = mean + std * epsilon
-    #######################
-    # END OF YOUR CODE    #
-    #######################
     return z
 
 
@@ -58,15 +52,9 @@ def KLD(mean, log_std):
               The values represent the Kullback-Leibler divergence to unit Gaussians.
     """
 
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
     # Compute KL divergence using the closed form formula from Equation 13
     # KL(N(mu, sigma^2) || N(0, 1)) = 0.5 * sum(exp(2*log_sigma) + mu^2 - 1 - 2*log_sigma)
     KLD = 0.5 * torch.sum(torch.exp(2 * log_std) + mean**2 - 1 - 2 * log_std, dim=-1)
-    #######################
-    # END OF YOUR CODE    #
-    #######################
     return KLD
 
 
@@ -79,9 +67,6 @@ def elbo_to_bpd(elbo, img_shape):
     Outputs:
         bpd - The negative log likelihood in bits per dimension for the given image.
     """
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
     # Calculate total number of dimensions per image (excluding batch dimension)
     # For MNIST: channels * height * width = 1 * 28 * 28 = 784
     num_dims = np.prod(img_shape[1:])
@@ -89,9 +74,6 @@ def elbo_to_bpd(elbo, img_shape):
     # Convert nats to bits: multiply by log2(e)
     # Normalize by number of dimensions
     bpd = elbo * np.log2(np.e) / num_dims
-    #######################
-    # END OF YOUR CODE    #
-    #######################
     return bpd
 
 
@@ -116,9 +98,6 @@ def visualize_manifold(decoder, grid_size=20):
     # - You can use torchvision's function "make_grid" to combine the grid_size**2 images into a grid
     # - Remember to apply a softmax after the decoder
 
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
     # Create percentile values for grid_size points
     # Range: [0.5/grid_size, 1.5/grid_size, ..., (grid_size-0.5)/grid_size]
     percentiles = torch.linspace(0.5 / grid_size, 1 - 0.5 / grid_size, grid_size)
@@ -149,9 +128,5 @@ def visualize_manifold(decoder, grid_size=20):
 
     # Create grid of images
     img_grid = make_grid(pixel_values, nrow=grid_size, normalize=False, pad_value=0.5)
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-
     return img_grid
 

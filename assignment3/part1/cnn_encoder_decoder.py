@@ -33,9 +33,6 @@ class CNNEncoder(nn.Module):
         # For an intial architecture, you can use the encoder of Tutorial 9.
         # Feel free to experiment with the architecture yourself, but the one specified here is
         # sufficient for the assignment.
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
         super().__init__()
 
         # CNN architecture similar to Tutorial 9
@@ -57,9 +54,6 @@ class CNNEncoder(nn.Module):
         # Linear layers to output mean and log_std for latent distribution
         self.fc_mean = nn.Linear(2*num_filters*4*4, z_dim)
         self.fc_log_std = nn.Linear(2*num_filters*4*4, z_dim)
-        #######################
-        # END OF YOUR CODE    #
-        #######################
 
     def forward(self, x):
         """
@@ -71,18 +65,12 @@ class CNNEncoder(nn.Module):
                       of the latent distributions.
         """
         x = x.float() / 15 * 2.0 - 1.0  # Move images between -1 and 1
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
         # Pass through convolutional layers
         h = self.net(x)
 
         # Output mean and log_std for the latent distribution
         mean = self.fc_mean(h)
         log_std = self.fc_log_std(h)
-        #######################
-        # END OF YOUR CODE    #
-        #######################
         return mean, log_std
 
 
@@ -100,9 +88,6 @@ class CNNDecoder(nn.Module):
         # For an intial architecture, you can use the decoder of Tutorial 9.
         # Feel free to experiment with the architecture yourself, but the one specified here is
         # sufficient for the assignment.
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
         super().__init__()
 
         # Linear layer to map from latent space to spatial feature map
@@ -124,9 +109,6 @@ class CNNDecoder(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(num_filters, num_input_channels, kernel_size=3, output_padding=1, padding=1, stride=2),  # 14x14 -> 28x28
         )
-        #######################
-        # END OF YOUR CODE    #
-        #######################
 
     def forward(self, z):
         """
@@ -138,18 +120,12 @@ class CNNDecoder(nn.Module):
                 Shape: [B,num_input_channels,28,28]
         """
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
         # Map latent vector to feature map
         x = self.linear(z)
         x = x.reshape(z.shape[0], -1, 4, 4)  # reshape to [B, 2*num_filters, 4, 4]
 
         # Upsample through transposed convolutions
         x = self.net(x)
-        #######################
-        # END OF YOUR CODE    #
-        #######################
         return x
 
     @property

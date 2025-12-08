@@ -67,9 +67,6 @@ class VAE(pl.LightningModule):
         #   all axes. Do not forget to change the 'reduction' parameter to
         #   make it consistent with the loss definition of the assignment.
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
         # Encode images to get mean and log_std
         mean, log_std = self.encoder(imgs)
 
@@ -97,9 +94,6 @@ class VAE(pl.LightningModule):
         # Compute bits per dimension
         elbo = L_rec + L_reg
         bpd = elbo_to_bpd(elbo, imgs.shape)
-        #######################
-        # END OF YOUR CODE    #
-        #######################
         return L_rec, L_reg, bpd
 
     @torch.no_grad()
@@ -111,9 +105,6 @@ class VAE(pl.LightningModule):
         Outputs:
             x_samples - Sampled, 4-bit images. Shape: [B,C,H,W]
         """
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
         # Sample from prior p(z) = N(0, I)
         z = torch.randn(batch_size, self.hparams.z_dim).to(self.decoder.device)
 
@@ -133,9 +124,6 @@ class VAE(pl.LightningModule):
 
         # Reshape back to image shape [batch_size, 1, 28, 28]
         x_samples = samples_flat.reshape(batch_size, 1, 28, 28)
-        #######################
-        # END OF YOUR CODE    #
-        #######################
         return x_samples
 
     def configure_optimizers(self):
