@@ -1,0 +1,149 @@
+Arguments:
+batch_size: 128
+valid_ratio: 0.5
+augmentations: False
+pretrained: False
+num_epochs: 30
+train_strats: ['standard']
+visualise: False
+epsilon_fgsm: 0.031
+alpha_fgsm: 0.5
+epsilon_pgd: 0.031
+alpha_pgd: 0.0078
+num_iter_pgd: 10
+save_dir: /home/adeliev/uvadlc_practicals_2025/assignment3/part2/logs/std_base
+test_crossover_defense: True
+Device: cuda
+training_strategy: standard
+Loading model
+Loading data
+Training model
+Epoch 0/29
+----------
+train Loss: 1.7793 Acc: 0.3479
+val Loss: 1.4891 Acc: 0.4326
+Epoch 1/29
+----------
+train Loss: 1.4105 Acc: 0.4878
+val Loss: 1.3260 Acc: 0.4943
+Epoch 2/29
+----------
+train Loss: 1.2409 Acc: 0.5521
+val Loss: 1.2534 Acc: 0.5211
+Epoch 3/29
+----------
+train Loss: 1.0989 Acc: 0.6078
+val Loss: 1.2015 Acc: 0.5492
+Epoch 4/29
+----------
+train Loss: 0.9752 Acc: 0.6532
+val Loss: 1.1794 Acc: 0.5645
+Epoch 5/29
+----------
+train Loss: 0.8603 Acc: 0.6989
+val Loss: 1.1619 Acc: 0.5723
+Epoch 6/29
+----------
+train Loss: 0.7456 Acc: 0.7412
+val Loss: 1.1902 Acc: 0.5738
+Epoch 7/29
+----------
+train Loss: 0.5766 Acc: 0.8130
+val Loss: 1.1554 Acc: 0.5869
+Epoch 8/29
+----------
+train Loss: 0.5336 Acc: 0.8315
+val Loss: 1.1612 Acc: 0.5904
+Epoch 9/29
+----------
+train Loss: 0.5109 Acc: 0.8393
+val Loss: 1.1719 Acc: 0.5881
+Epoch 10/29
+----------
+train Loss: 0.4902 Acc: 0.8467
+val Loss: 1.1783 Acc: 0.5896
+Epoch 11/29
+----------
+train Loss: 0.4735 Acc: 0.8543
+val Loss: 1.1859 Acc: 0.5918
+Epoch 12/29
+----------
+train Loss: 0.4514 Acc: 0.8625
+val Loss: 1.1965 Acc: 0.5877
+Epoch 13/29
+----------
+train Loss: 0.4379 Acc: 0.8668
+val Loss: 1.2023 Acc: 0.5879
+Epoch 14/29
+----------
+train Loss: 0.4188 Acc: 0.8760
+val Loss: 1.2048 Acc: 0.5883
+Epoch 15/29
+----------
+train Loss: 0.4132 Acc: 0.8776
+val Loss: 1.2068 Acc: 0.5877
+Epoch 16/29
+----------
+train Loss: 0.4118 Acc: 0.8782
+val Loss: 1.2083 Acc: 0.5854
+Epoch 17/29
+----------
+train Loss: 0.4117 Acc: 0.8788
+val Loss: 1.2074 Acc: 0.5881
+Epoch 18/29
+----------
+train Loss: 0.4095 Acc: 0.8804
+val Loss: 1.2090 Acc: 0.5883
+Epoch 19/29
+----------
+train Loss: 0.4068 Acc: 0.8816
+val Loss: 1.2109 Acc: 0.5912
+Epoch 20/29
+----------
+train Loss: 0.4051 Acc: 0.8817
+val Loss: 1.2100 Acc: 0.5877
+Epoch 21/29
+----------
+train Loss: 0.4041 Acc: 0.8808
+val Loss: 1.2117 Acc: 0.5881
+Epoch 22/29
+----------
+train Loss: 0.4029 Acc: 0.8816
+val Loss: 1.2068 Acc: 0.5900
+Epoch 23/29
+----------
+train Loss: 0.4030 Acc: 0.8827
+val Loss: 1.2113 Acc: 0.5877
+Epoch 24/29
+----------
+train Loss: 0.4056 Acc: 0.8809
+val Loss: 1.2131 Acc: 0.5869
+Epoch 25/29
+----------
+train Loss: 0.4013 Acc: 0.8818
+val Loss: 1.2121 Acc: 0.5889
+Epoch 26/29
+----------
+train Loss: 0.4035 Acc: 0.8820
+val Loss: 1.2111 Acc: 0.5877
+Epoch 27/29
+----------
+train Loss: 0.4047 Acc: 0.8826
+val Loss: 1.2148 Acc: 0.5875
+Epoch 28/29
+----------
+train Loss: 0.4033 Acc: 0.8819
+val Loss: 1.2115 Acc: 0.5877
+Epoch 29/29
+----------
+train Loss: 0.4045 Acc: 0.8821
+val Loss: 1.2126 Acc: 0.5877
+Training complete in 2m 37s
+Best val Acc: 0.591797
+Testing model
+Accuracy of the network on the test set: 59 %
+Testing adversarial attacks
+Attack fgsm, args: {'alpha': 0.5, 'epsilon': 0.031}
+Test Accuracy = 519 / 5000 = 0.1038
+Attack pgd, args: {'alpha': 0.0078, 'epsilon': 0.031, 'num_iter': 10}
+Test Accuracy = 185 / 5000 = 0.037
